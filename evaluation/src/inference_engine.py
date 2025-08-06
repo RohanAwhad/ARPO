@@ -3,7 +3,6 @@ import time
 import json
 import os
 
-from evaluation.src.tools.search_tool import DuckDuckGoSearchTool
 from vllm import SamplingParams
 from transformers import AutoTokenizer
 from typing import Dict, Any, Optional
@@ -12,7 +11,7 @@ from tqdm.asyncio import tqdm as async_tqdm
 from .prompt_manager import PromptManager
 from .data_loader import DataLoader
 from .tools.tool_executor import ToolExecutor
-from .tools import PythonTool, BingSearchTool, BingSearchToolSDS
+from .tools import PythonTool, DuckDuckGoSearchTool
 from .vllm_client_pool import VLLMClientPool
 from .sample_processor import SampleProcessor, SampleProcessorCompletion
 

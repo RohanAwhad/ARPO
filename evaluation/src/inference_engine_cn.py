@@ -7,14 +7,13 @@ import os
 from typing import List, Dict, Any, Optional
 
 from tqdm.asyncio import tqdm as async_tqdm
-from evaluation.src.tools.search_tool import DuckDuckGoSearchTool
 from transformers import AutoTokenizer
 from vllm import SamplingParams
 
 from .prompt_manager import PromptManager
 from .data_loader import DataLoader
 from .tools.tool_executor import ToolExecutor
-from .tools import PythonTool, BingSearchToolSDScn
+from .tools import PythonTool, DuckDuckGoSearchTool
 
 from .sample_processor import (
     SampleProcessor,
