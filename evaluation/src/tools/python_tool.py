@@ -9,10 +9,8 @@ from .base_tool import BaseTool
 class PythonTool(BaseTool):
     """Execute Python Code"""
 
-    def __init__(self, conda_path: str, conda_env: str, max_concurrent: int = 10):
-        self.conda_path = conda_path
-        self.conda_env = conda_env
-        self.python_path = f"{conda_path}/envs/{conda_env}/bin/python"
+    def __init__(self, python_path: str, max_concurrent: int = 10):
+        self.python_path = python_path
         self.semaphore = BoundedSemaphore(max_concurrent)
 
     @property

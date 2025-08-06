@@ -7,6 +7,7 @@ import os
 from typing import List, Dict, Any, Optional
 
 from tqdm.asyncio import tqdm as async_tqdm
+from evaluation.src.tools.search_tool import DuckDuckGoSearchTool
 from transformers import AutoTokenizer
 from vllm import SamplingParams
 
@@ -65,14 +66,11 @@ class AsyncInference:
     def _create_tool_executor(self):
         tool_executor = ToolExecutor()
         python_tool = PythonTool(
-            conda_path=self.args.conda_path,
-            conda_env=self.args.conda_env,
+            python_path=self.args.python_path,
             max_concurrent=self.args.python_max_concurrent,
         )
         tool_executor.register_tool(python_tool)
-        search_tool = BingSearchTool(
-            api_key=self.args.bing_api_key,
-            zone=self.args.bing_zone,
+        search_tool = DuckDuckGoSearchTool(
             max_results=self.args.search_max_results,
             result_length=self.args.search_result_length,
             requests_per_second=self.args.bing_requests_per_second,
@@ -262,24 +260,21 @@ class AsyncInferenceCompletionSDS(AsyncInferenceCompletion):
     def _create_tool_executor(self):
         tool_executor = ToolExecutor()
         python_tool = PythonTool(
-            conda_path=self.args.conda_path,
-            conda_env=self.args.conda_env,
+            python_path=self.args.python_path,
             max_concurrent=self.args.python_max_concurrent,
         )
         tool_executor.register_tool(python_tool)
-        search_tool = BingSearchToolSDScn(
-            api_key=self.args.bing_api_key,
-            zone=self.args.bing_zone,
+        search_tool = DuckDuckGoSearchTool(
             max_results=self.args.search_max_results,
             result_length=self.args.search_result_length,
             requests_per_second=self.args.bing_requests_per_second,
             max_retries=self.args.bing_max_retries,
             retry_delay=self.args.bing_retry_delay,
             search_cache_file=self.args.search_cache_file,
-            url_cache_file=self.args.url_cache_file,
-            summ_model_path=self.args.summ_model_path,
-            summ_model_urls=self.args.summ_model_urls,
-            summ_model_name=self.args.summ_model_name,
+            # url_cache_file=self.args.url_cache_file,
+            # summ_model_path=self.args.summ_model_path,
+            # summ_model_urls=self.args.summ_model_urls,
+            # summ_model_name=self.args.summ_model_name,
         )
         tool_executor.register_tool(search_tool)
         return tool_executor

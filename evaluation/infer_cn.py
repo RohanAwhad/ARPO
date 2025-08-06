@@ -74,16 +74,12 @@ def parse_arguments():
                                  help="Timeout in seconds for processing a single sample")
 
     tools_group = parser.add_argument_group("Tool Configuration")
-    tools_group.add_argument("--conda_path", type=str",
-                             help="Path to Conda installation")
+    tools_group.add_argument("--python_path", type=str,
+                             help="Path to Python env")
     tools_group.add_argument("--conda_env", type=str,
                              help="Conda environment name")
     tools_group.add_argument("--python_max_concurrent", type=int, default=32,
                              help="Maximum concurrency for Python executor")
-    tools_group.add_argument("--bing_api_key", type=str, required=True,
-                             help="Bing Search API key")
-    tools_group.add_argument("--bing_zone", type=str, default="serp_api1",
-                             help="Bing search region")
     tools_group.add_argument("--search_max_results", type=int, default=10,
                              help="Maximum number of search results")
     tools_group.add_argument("--search_result_length", type=int, default=1000,
