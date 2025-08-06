@@ -14,10 +14,23 @@ from .math_equivalence import is_equiv
 EVALUATION_PROMPT = """Given a Question and its Golden Answer, verify whether the Predicted Answer is correct. The prediction is correct if it fully aligns with the meaning and key information of the Golden Answer. Respond with "Correct" if the prediction is correct and "Incorrect" otherwise.
 Golden Answer may have multiple options, and matching any one of them is considered correct.
 
+Provide your response in <judgment></judgment> tags.
+
 Question: {question}
 Golden Answer: {labeled_answer}
 Predicted Answer: {pred_answer}
 """
+
+EVALUATION_PROMPT_WITH_RUBRIC = """Given a Question, its Golden Answer, and an evaluation Rubric, verify whether the Predicted Answer is correct according to the rubric. Respond with "Correct" if the prediction meets the rubric criteria and "Incorrect" otherwise.
+
+Provide your response in <judgment></judgment> tags.
+
+Question: {question}
+Golden Answer: {labeled_answer}  
+Rubric: {rubric}
+Predicted Answer: {pred_answer}
+"""
+
 
 
 class LLMEvaluator:
@@ -63,7 +76,8 @@ class LLMEvaluator:
         question: str,
         labeled_answer: str,
         pred_answer: str,
-        semaphore: asyncio.Semaphore
+        semaphore: asyncio.Semaphore,
+        rubric: str = ""
     ) -> Tuple[bool, str]:
         """
         Evaluate a single answer pair.
@@ -73,16 +87,25 @@ class LLMEvaluator:
             labeled_answer: Ground truth answer
             pred_answer: Predicted answer
             semaphore: Semaphore to control concurrency
+            rubric: Evaluation rubric (optional)
 
         Returns:
             (is_correct, evaluation_reason)
         """
-        global EVALUATION_PROMPT
-        prompt = EVALUATION_PROMPT.format(
-            question=question,
-            labeled_answer=labeled_answer,
-            pred_answer=pred_answer
-        )
+        if rubric.strip():
+            prompt = EVALUATION_PROMPT_WITH_RUBRIC.format(
+                question=question,
+                labeled_answer=labeled_answer,
+                rubric=rubric,
+                pred_answer=pred_answer
+            )
+        else:
+            prompt = EVALUATION_PROMPT.format(
+                question=question,
+                labeled_answer=labeled_answer,
+                pred_answer=pred_answer
+            )
+
 
         for attempt in range(self.retry_limit):
             try:

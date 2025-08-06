@@ -77,6 +77,8 @@ class Evaluator:
         answer = item.get('answer', '')
         prediction = item.get('prediction', '')
         output = item.get('output', '')
+        rubric = item.get('rubric', '')
+
 
         # If prediction is empty, extract from the last few lines of output
         if not prediction:
@@ -146,10 +148,12 @@ class Evaluator:
                 question=question,  
                 labeled_answer=answer,
                 pred_answer=prediction,
+                rubric=rubric,
                 semaphore=semaphore
             )
             metrics["llm_equal"] = int(is_correct)
             metrics["llm_response"] = llm_reason_answer
+
 
         return metrics
 

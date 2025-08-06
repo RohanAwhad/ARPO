@@ -89,7 +89,7 @@ class AsyncInference:
         return processor
 
     async def process_sample(
-        self, question: str, golden_answer: str, session_id: Optional[str] = None
+        self, question: str, golden_answer: str, rubric: str = "", session_id: Optional[str] = None
     ) -> Dict[str, Any]:
         sample_stat = {
             "instruction": self.prompt_manager.get_system_prompt(),
@@ -97,9 +97,11 @@ class AsyncInference:
             "output": "",
             "prediction": "",
             "answer": golden_answer,
+            "rubric": rubric,
             "logs": [],
             "search_query_history": set(),
         }
+
 
         current_task = asyncio.current_task()
         if current_task:
@@ -111,9 +113,10 @@ class AsyncInference:
         sample_stat = processor.sample_stat
         return sample_stat
 
-    async def process_sample_wrap(self, idx, question, answer):
+    async def process_sample_wrap(self, idx, question, answer, rubric=""):
         try:
-            process_task = asyncio.create_task(self.process_sample(question, answer))
+            process_task = asyncio.create_task(self.process_sample(question, answer, rubric))
+
             try:
                 result = await asyncio.wait_for(
                     process_task,
@@ -153,6 +156,7 @@ class AsyncInference:
                 "output": f"Error: {str(e)}",
                 "prediction": f"Error: {str(e)}",
                 "answer": answer,
+                "rubric": rubric,
                 "logs": [],
                 "search_query_history": set(),
             }
@@ -162,13 +166,14 @@ class AsyncInference:
     async def run_inference(self, question):
         return await self.process_sample_wrap(question, question, None)
 
-    async def task_worker(self, task_queue, questions, answers, results):
+    async def task_worker(self, task_queue, questions, answers, rubrics, results):
         while not task_queue.empty():
             try:
                 idx = await task_queue.get()
                 results[idx] = await self.process_sample_wrap(
-                    idx, questions[idx], answers[idx]
+                    idx, questions[idx], answers[idx], rubrics[idx]
                 )
+
             except Exception as e:
                 import traceback
 
@@ -182,7 +187,7 @@ class AsyncInference:
             print(
                 ">>> Inference dataset: ",
             )
-            questions, answers = dataloader.load_data()
+            questions, answers, rubrics = dataloader.load_data()
             total_examples = min(len(questions), self.args.counts)
             questions = questions[:total_examples]
             answers = answers[:total_examples]
@@ -200,7 +205,7 @@ class AsyncInference:
                 for _ in range(min(self.args.max_concurrent_requests, total_examples)):
                     workers.append(
                         asyncio.create_task(
-                            self.task_worker(task_queue, questions, answers, results)
+                            self.task_worker(task_queue, questions, answers, rubrics, results)
                         )
                     )
                 pbar = async_tqdm(total=total_examples, desc="Processing samples")

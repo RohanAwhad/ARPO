@@ -21,19 +21,32 @@ class DataLoader:
         self.dataset_name = dataset_name
         self.data_path = os.path.join(data_path, dataset_name, 'test.jsonl')
 
-    def load_data(self) -> Tuple[List[str], List[str]]:
+    def load_data(self) -> Tuple[List[str], List[str], List[str]]:
         """
         Load dataset
 
         Returns:
-            (questions, answers)
+            (questions, answers, rubrics)
         """
         questions = []
         answers = []
+        rubrics = []
+
 
         print(f"Loading dataset from {self.data_path}")
 
-        if (
+        # Check if this is SDG dataset
+        is_sdg_dataset = "sdg" in self.data_path.lower() or "sdg" in self.dataset_name.lower()
+
+        if is_sdg_dataset:
+            # SDG dataset with rubric
+            with open(self.data_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    data = json.loads(line)
+                    questions.append(data["question"])
+                    answers.append(data["answer"])
+                    rubrics.append(data.get("rubric", ""))
+        elif (
             "aime24" in self.data_path
             or "amc23" in self.data_path
             or "gsm8k" in self.data_path
@@ -49,6 +62,8 @@ class DataLoader:
                     if "gsm8k" in self.data_path:
                         answer = extract_solution(answer)
                     answers.append(answer)
+                    rubrics.append("")
+
         elif "svamp" in self.data_path or "asdiv" in self.data_path:
             with open(self.data_path, "r", encoding="utf-8") as f:
                 for line in f:
@@ -62,18 +77,24 @@ class DataLoader:
                         answer = answer.split(" (")[0]
                     questions.append(body + " " + question)
                     answers.append(answer)
+                    rubrics.append("")
+
         elif "mawps" in self.data_path:
             with open(self.data_path, "r", encoding="utf-8") as f:
                 for line in f:
                     data = json.loads(line)
                     questions.append(data["input"])
                     answers.append(data["target"])
+                    rubrics.append("")
+
         elif "carp_en" in self.data_path:
             with open(self.data_path, "r", encoding="utf-8") as f:
                 for line in f:
                     data = json.loads(line)
                     questions.append(data["content"])
                     answers.append(data["answer"])
+                    rubrics.append("")
+
         elif "minerva_math" in self.data_path:
             with open(self.data_path, "r", encoding="utf-8") as f:
                 for line in f:
@@ -86,30 +107,40 @@ class DataLoader:
                         pass
                     questions.append(question)
                     answers.append(answer)
+                    rubrics.append("")
+
         elif "olympiadbench" in self.data_path:
             with open(self.data_path, "r", encoding="utf-8") as f:
                 for line in f:
                     data = json.loads(line)
                     questions.append(data["question"])
                     answers.append(data["final_answer"][0])
+                    rubrics.append("")
+
         elif "/math/test" in self.data_path or "aime25" in self.data_path:
             with open(self.data_path, "r", encoding="utf-8") as f:
                 for line in f:
                     data = json.loads(line)
                     questions.append(data["problem"])
                     answers.append(data["answer"])
+                    rubrics.append("")
+
         elif "gaia" in self.data_path:
             with open(self.data_path, "r", encoding="utf-8") as f:
                 for line in f:
                     data = json.loads(line)
                     questions.append(data["Question"])
                     answers.append(data["answer"])
+                    rubrics.append("")
+
         else:
             with open(self.data_path, "r", encoding="utf-8") as f:
                 for line in f:
                     data = json.loads(line)
                     questions.append(data["question"])
                     answers.append(data["answer"])
+                    rubrics.append("")
 
         print(f"Loading {len(questions)} samples from {self.data_path}...")
-        return questions, answers
+        return questions, answers, rubrics
+
