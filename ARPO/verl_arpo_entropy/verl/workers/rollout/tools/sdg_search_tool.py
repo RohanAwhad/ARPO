@@ -239,14 +239,22 @@ class BashFindTool(BaseTool):
       # Validate path
       validated_path = search_path
       
-      # Build find command
-      cmd = ["find", validated_path]
-      
-      if file_type:
-        cmd.extend(["-type", file_type])
-      
-      if pattern and pattern != "*":
-        cmd.extend(["-name", pattern])
+      # Build command using ripgrep for files (respects .gitignore)
+      if file_type == "d":
+        # ripgrep doesn't list directories, fall back to find for dirs
+        cmd = ["find", validated_path, "-type", "d"]
+        if pattern and pattern != "*":
+          cmd.extend(["-name", pattern])
+      else:
+        # Use ripgrep for files (respects .gitignore)
+        cmd = ["rg", "--files"]
+        
+        if pattern and pattern != "*":
+          cmd.extend(["--glob", pattern])
+        
+        if validated_path != ".":
+          cmd.append(validated_path)
+
       
       # Execute command
       result = subprocess.run(
@@ -503,18 +511,15 @@ class BashGrepTool(BaseTool):
       # Validate path
       validated_path = search_path
       
-      # Build grep command
-      cmd = ["grep", "-n", "-r"]  # Always include line numbers and recursive
+      # Use ripgrep (respects .gitignore)
+      cmd = ["rg", pattern]
       
       if include_pattern:
-        cmd.extend(["--include", include_pattern])
-      
-      cmd.append(pattern)
+        cmd.extend(["--glob", include_pattern])
       
       if validated_path != ".":
         cmd.append(validated_path)
-      else:
-        cmd.append(".")
+
       
       # Execute
       result = subprocess.run(
