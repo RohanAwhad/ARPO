@@ -17,7 +17,7 @@ declare -A task_map=(
     ["xbench"]="qa"
 )
 
-OUTPUT_DIR="your_result_directory"
+OUTPUT_DIR="/mnt/4TB/rawhad/arpo_evaluation_tests/v0/"
 
 
 find "$OUTPUT_DIR" -type f -name '*_output_*.json' | while read -r file_path; do

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Activate the Conda environment
-source < /path/to/your/conda >/bin/activate
-conda activate < your env name >
+#source < /path/to/your/conda >/bin/activate
+#conda activate < your env name >
 
 # Switch to the script's directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -31,16 +31,15 @@ DATASET_NAME=$(echo "${data_names[@]}" | tr '\n' ' ')
 
 # Reasoning model endpoints
 infer_endpoints=(
-    "http://localhost:8002/v1"
-    "http://localhost:8003/v1"
+    "http://localhost:8000/v1"
 )  
 ENDPOINTS=$(echo "${infer_endpoints[@]}" | tr '\n' ' ')
 
 SAMPLE_TIMEOUT=1500  # Timeout for one sample
 
-EXP_NAME="<your_exp_name>"
-MODEL_PATH="<your model path>"
-OUTPUT_PATH="<your output path>"
+EXP_NAME="reasoning_tasks"
+MODEL_PATH="Qwen/Qwen2.5-7B-Instruct"
+OUTPUT_PATH="/mnt/4TB/rawhad/arpo_evaluation_tests/v0"
 DATA_PATH="data"                       
 TURNS="1 2 3 4 5"  # Inference turns
 
@@ -80,21 +79,18 @@ MAX_CONCURRENT=50                  # Max concurrent requests
 COUNTS=500                        # Number of samples to process
 
 # Tool configurations
-CONDA_PATH="<your conda path>/"   # Conda installation path
-CONDA_ENV="<your conda env>"                                # Conda environment name
+PYTHON_PATH="/mnt/4TB/rawhad/mamba_envs/arpo_env/bin/python"   # Conda installation path
 PYTHON_MAX_CONCURRENT=32                        # Max concurrent Python executor
-BING_API_KEY="<your bing search key>"  # Bing Search API key
-BING_ZONE="<bing zone>"                        # Bing search zone
 SEARCH_MAX_RESULTS=10                            # Max number of search results
 SEARCH_RESULT_LENGTH=1000                        # Max length per search result
-BING_REQUESTS_PER_SECOND=32.0                    # Max Bing search requests per second
+BING_REQUESTS_PER_SECOND=10.0                    # Max Bing search requests per second
 BING_MAX_RETRIES=3                              # Max Bing search retries
 BING_RETRY_DELAY=1.0                            # Bing search retry delay (seconds)
 
 # Simple deep search config
-SUMM_MODEL_URLS="http://localhost:8004/v1 http://localhost:8005/v1"
-SUMM_MODEL_NAME="Qwen2.5-72B-Instruct"
-SUMM_MODEL_PATH="<summ model path>"
+SUMM_MODEL_URLS="http://localhost:8000/v1"
+SUMM_MODEL_NAME="Qwen2.5-7B-Instruct"
+SUMM_MODEL_PATH="Qwen/Qwen2.5-7B-Instruct"
 SEARCH_CACHE_FILE="search_cache.db"
 URL_CACHE_FILE="search_url_cache.db"
 
@@ -135,11 +131,8 @@ if [ ! -z "$DATA_PATH" ]; then
 fi
 
 # Add tool config parameters
-CMD+=" --conda_path $CONDA_PATH"
-CMD+=" --conda_env $CONDA_ENV"
+CMD+=" --python_path $PYTHON_PATH"
 CMD+=" --python_max_concurrent $PYTHON_MAX_CONCURRENT"
-CMD+=" --bing_api_key $BING_API_KEY"
-CMD+=" --bing_zone $BING_ZONE"
 CMD+=" --search_max_results $SEARCH_MAX_RESULTS"
 CMD+=" --search_result_length $SEARCH_RESULT_LENGTH"
 CMD+=" --bing_requests_per_second $BING_REQUESTS_PER_SECOND"
