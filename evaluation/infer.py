@@ -10,6 +10,7 @@ infer_mode_help = """Inference mode selection
 [default]       :    Basic behavior similar to the original search tool, uses summarization and continuously appends to the assistant content.
 [completion]    :    Builds on [default] by adding feedback for exceeding the Python or search call limits, and for repeated search queries.
 [completion_sds]:    Builds on [completion] by using a simple deep search engine.
+[completion_sdg]:    Builds on [completion] by using SDG tools (bash find, grep, read).
 """
 
 def parse_arguments():
@@ -20,11 +21,13 @@ def parse_arguments():
         choices=[
             'completion',
             'completion_sds',
+            'completion_sdg',
             'default',
         ],
         default='default',
         help=infer_mode_help,
     )
+
     parser.add_argument("--turns", type=int, nargs='+', default=[1, 2, 3],
                         help='Number of inference turns to run')
     
@@ -98,8 +101,15 @@ def parse_arguments():
     tools_group.add_argument("--search_cache_file", type=str, default="search_cache.db",
                              help="Cache file for search results")
     tools_group.add_argument("--url_cache_file", type=str, default="search_url_cache.db",
-                             help="Cache file for web pages")  
+                             help="Cache file for web pages")
+    
+    sdg_group = parser.add_argument_group("SDG Configuration")
+    sdg_group.add_argument("--working_dir", type=str, default=None,
+                           help="Working directory for SDG tools")
+    sdg_group.add_argument("--cache_dir", type=str, default="cache",
+                           help="Cache directory for SDG tools")
     return parser.parse_args()
+
 
 
 def get_inference_instance():
@@ -110,6 +120,8 @@ def get_inference_instance():
         from src.inference_engine import AsyncInferenceCompletion as AsyncInfer
     elif infer_mode == 'completion_sds':
         from src.inference_engine import AsyncInferenceCompletionSDS as AsyncInfer
+    elif infer_mode == 'completion_sdg':
+        from src.inference_engine import AsyncInferenceSDG as AsyncInfer
     elif infer_mode == 'default':
         from src.inference_engine import AsyncInference as AsyncInfer
     else:
@@ -117,6 +129,7 @@ def get_inference_instance():
 
     inference = AsyncInfer(args)
     return inference
+
 
 async def main():
     inference = get_inference_instance()
