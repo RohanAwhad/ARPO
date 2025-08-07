@@ -206,6 +206,14 @@ class vLLMRolloutWithTools(vLLMRollout):
         success_per_tool = Counter()
         total_time_per_tool = Counter()
 
+        # SDG-specific tool tracking
+        sdg_tool_usage = {
+            "find_calls": 0,
+            "grep_calls": 0,
+            "read_calls": 0,
+            "total_file_operations": 0
+        }
+
         do_sample = prompts.meta_info.get('do_sample', True)
         is_validate = prompts.meta_info.get('validate', False)
         
@@ -347,6 +355,15 @@ class vLLMRolloutWithTools(vLLMRollout):
                                 # 更新工具调用计数统计
                                 tool_metrics["tools/total_calls"] += 1
                                 calls_per_tool[tag] += 1
+
+                                # Track SDG-specific tool usage
+                                if tag == "find":
+                                    sdg_tool_usage["find_calls"] += 1
+                                elif tag == "grep":
+                                    sdg_tool_usage["grep_calls"] += 1
+                                elif tag == "read":
+                                    sdg_tool_usage["read_calls"] += 1
+                                sdg_tool_usage["total_file_operations"] += 1
                         else:
                             logger.warning(f"Tool call limit reached for sample {out_idx}. Appending EOS.")
                             curr_inputs[out_idx].append(eos_token_id)
@@ -634,8 +651,8 @@ class vLLMRolloutWithTools(vLLMRollout):
             self.inference_engine.free_cache_engine()
             
         # 合并所有metrics
-        all_metrics = {**tool_metrics, **tool_specific_metrics}
-        
+        sdg_metrics = {f"sdg/{k}": v for k, v in sdg_tool_usage.items()}
+        all_metrics = {**tool_metrics, **tool_specific_metrics, **sdg_metrics}
         # 将metrics添加到meta_info中
         meta_info = deepcopy(prompts.meta_info) if prompts.meta_info else {}
         meta_info["metrics"] = all_metrics

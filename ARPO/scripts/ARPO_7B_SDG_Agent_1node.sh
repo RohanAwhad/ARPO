@@ -63,11 +63,10 @@ BRANCH_PROBABILITY=0.5             # Branch probability
 Entropy_weight=0.2
 # ============================ Rollout Tools Configuration ==========================
 
-# TODO: fill these in config
-# SDG_PATH="<path_to_sdg>"
-# BASH_FIND_CLASS_PATH=
-# BASH_GREP_CLASS_PATH=
-# READ_FILE_CLASS_PATH=
+SDG_PATH="/home/vpcuser/rawhad/sdg_hub"
+BASH_FIND_CLASS_PATH="verl.workers.rollout.tools.sdg_search_tool.BashFindTool"
+BASH_GREP_CLASS_PATH="verl.workers.rollout.tools.sdg_search_tool.BashGrepTool"
+READ_FILE_CLASS_PATH="verl.workers.rollout.tools.sdg_search_tool.BashReadTool"
 
 # ============================ Reward Model Configuration ==========================
 # Reward model settings
@@ -83,12 +82,9 @@ TEST_FREQ=5                        # Test frequency
 
 # ============================ Path Configuration ============================
 # Save path
-SAVE_PATH="<your_checkpoint_save_dir>/${EXPERIMENT_NAME}" # Modify save path
+SAVE_PATH="/mnt/4TB/rawhad/arpo_sdg_task/train/${EXPERIMENT_NAME}" # Modify save path
 ROLLOUT_SAVE_PATH="${SAVE_PATH}/rollout"
 
-# ============================ WandB Configuration ============================
-# WandB settings
-WANDB_API_KEY="<your_wandb_key>" # Modify your wandb key
 # ============================ Preparation ============================
 # Login to WandB (if API key is provided)
 if [ "$WANDB_API_KEY" != "" ]; then
@@ -141,6 +137,10 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.branch_probability=${BRANCH_PROBABILITY} \
     actor_rollout_ref.rollout.entropy_weight=${Entropy_weight} \
     actor_rollout_ref.rollout.multi_turn.enable=${ENABLE_MULTI_TURN} \
+    actor_rollout_ref.rollout.tools.tool_instances.find.params.working_dir=${SDG_PATH} \
+    actor_rollout_ref.rollout.tools.tool_instances.grep.params.working_dir=${SDG_PATH} \
+    actor_rollout_ref.rollout.tools.tool_instances.read.params.working_dir=${SDG_PATH} \
+
     actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=$((4*(MAX_PROMPT_LENGTH+MAX_RESPONSE_LENGTH))) \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     reward_model.reward_manager=${REWARD_MANAGER} \
