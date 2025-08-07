@@ -280,3 +280,35 @@ class AsyncInferenceCompletionSDS(AsyncInferenceCompletion):
         # )
         # tool_executor.register_tool(search_tool)
         return tool_executor
+
+
+class AsyncInferenceSDG(AsyncInferenceCompletion):
+    """SDG inference using bash find, grep, and read tools"""
+
+    def _create_tool_executor(self):
+        tool_executor = ToolExecutor()
+        # Register SDG tools
+        from .tools.sdg_search_tool import BashFindTool, BashGrepTool, BashReadTool
+
+        working_dir = getattr(self.args, 'working_dir', None)
+        cache_dir = getattr(self.args, 'cache_dir', None)
+
+        find_tool = BashFindTool(
+            working_dir=working_dir,
+            cache_file=f"{cache_dir}/bash_find_cache.db" if cache_dir else None
+        )
+        grep_tool = BashGrepTool(
+            working_dir=working_dir,
+            cache_file=f"{cache_dir}/bash_grep_cache.db" if cache_dir else None
+        )
+        read_tool = BashReadTool(
+            working_dir=working_dir,
+            cache_file=f"{cache_dir}/bash_read_cache.db" if cache_dir else None
+        )
+
+        tool_executor.register_tool(find_tool)
+        tool_executor.register_tool(grep_tool)
+        tool_executor.register_tool(read_tool)
+
+        return tool_executor
+
