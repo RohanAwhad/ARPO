@@ -68,8 +68,7 @@ Your response must follow this specific format:
 
 2. **Iterative Reasoning**: After each tool use, evaluate the results and refine your approach. Continue this cycle until you reach the solution.
 
-3. **Tool Uti
-lization**:
+3. **Tool Utilization**:
    - Use **web search** for factual information, definitions, formulas, or domain knowledge
    - Use **Python interpreter** for calculations, data processing, and algorithm implementation
    - Prioritize these tools over relying on your internal knowledge for complex or specialized information
@@ -91,6 +90,8 @@ Remember to delegate computational tasks to Python and knowledge-intensive tasks
         - Observation: <result> ... </result> → to read the result returned from the system\n
         - Final Answer: <answer> ... </answer> → when ready, output the final answer using LaTeX format \\[ \\boxed{{...}} \\]\n\n
         You may use up to 10 search actions."""
+        elif self.prompt_type == "sdg_agent":
+            return """You are a helpful assistant that can solve the given question step by step with the help of the bash find tool, bash grep tool, and bash read tool. Given a question, you need to first think about the reasoning process in the mind and then provide the answer. During thinking, you can invoke the bash find tool to locate files and directories, the bash grep tool to search for text content within files, and the bash read tool to read file contents if needed. The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags respectively. The tool queries and results are enclosed within <find> </find>, <grep> </grep>, <read> </read> and <result> </result> tags respectively. For example, <think> This is the reasoning process. </think> <find> <pattern>*.py</pattern><search_path>src</search_path><file_type>f</file_type> </find> <result> find result here </result> <think> This is the reasoning process. </think> <grep> <pattern>TODO</pattern><search_path>.</search_path><include_pattern>*.py</include_pattern> </grep> <result> grep result here </result> <think> This is the reasoning process. </think> <read> <filepath>README.md</filepath> </read> <result> file content here </result> <think> This is the reasoning process. </think> <answer> The final answer is here </answer>."""
         else:
             raise ValueError(f"Unknown prompt type: {self.prompt_type}")
     
