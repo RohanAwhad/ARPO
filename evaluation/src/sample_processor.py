@@ -189,6 +189,15 @@ class SampleProcessorCompletion(SampleProcessor):
         question = self.sample_stat["input"]
         print(f'Repeated search for question: "{question}"')
 
+    async def call_sdg_tool(self, tool_tag: str, tool_content: str):
+        tool_start = time.time()
+        tool_result = await self.tool_executor.execute(tool_tag, tool_content, timeout=120)
+        # Add SDG tool time to search time for now (could add separate tracking)
+        self.search_time += time.time() - tool_start
+        tool_result_formatted = f"<result>{tool_result}</result>"
+        self.log_output("user", tool_result_formatted)
+        self.search_rounds += 1
+
     async def run(self):
         self.sample_start_time = time.time()
         self.process_input()
@@ -214,6 +223,9 @@ class SampleProcessorCompletion(SampleProcessor):
                         self.call_search_same_query()
                 else:
                     self.call_search_max_limit()
+            elif tool_tag in ["find", "grep", "read"]:
+                tool_content = self.tool_executor.extract_content(output, tool_tag)
+                await self.call_sdg_tool(tool_tag, tool_content)
             else:
                 if "</answer>" not in output:
                     print(
@@ -223,3 +235,4 @@ class SampleProcessorCompletion(SampleProcessor):
                 break
         self.sample_stat["prediction"] = extract_answer(self.sample_stat["output"])
         self.total_time = time.time() - self.sample_start_time
+
