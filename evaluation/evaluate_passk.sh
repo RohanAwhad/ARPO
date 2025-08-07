@@ -15,9 +15,10 @@ declare -A task_map=(
     ["gaia"]="qa"
     ["SimpleQA"]="qa"
     ["xbench"]="qa"
+    ["sdg"]="qa"
 )
 
-OUTPUT_DIR="/mnt/4TB/rawhad/arpo_evaluation_tests/v0/"
+OUTPUT_DIR="/mnt/4TB/rawhad/arpo_evaluation_tests/sdg_v1/"
 
 
 find "$OUTPUT_DIR" -type f -name '*_output_*.json' | while read -r file_path; do
