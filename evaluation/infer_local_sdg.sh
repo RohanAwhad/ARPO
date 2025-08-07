@@ -10,18 +10,6 @@ export PYTHONPATH=$(pwd):$PYTHONPATH
 
 # datasets
 data_names=(
-    # "aime24"
-    # "aime25"
-    # "math500"
-    # "gsm8k"
-    # "math"
-    # "webwalker"
-    # "hotpotqa"
-    # "2wiki"
-    # "bamboogle"
-    # "musique"
-    # "hle"
-    # "gaia"
     "sdg"
 )
 DATASET_NAME=$(echo "${data_names[@]}" | tr '\n' ' ')
@@ -40,34 +28,14 @@ OUTPUT_PATH="/mnt/4TB/rawhad/arpo_evaluation_tests/sdg_v1"
 DATA_PATH="data"
 TURNS="1 2 3 4 5"  # Inference turns
 
-with_tools=true
-if [ "$use_sdg_tools" = true ]; then
-    PROMPT_TYPE="sdg_agent"            # Prompt type for SDG tools
-    MAX_PYTHON_TIMES=5                 # Max Python tool invocation times
-    MAX_SEARCH_TIMES=0                 # No search tools for SDG
-    WORKING_DIR="/home/vpcuser/rawhad/sdg_hub"  # Set your project directory  # SDG_HUB commit: 2d09b7cfd7403cedda4bc2f2ab54c3960204b5f1 in chore/deps-examples-update
-    CACHE_DIR="cache"
-elif [ "$with_tools" = true ]; then
-    PROMPT_TYPE="code_search"          # Prompt type (code_search, search, math, base)
-    MAX_PYTHON_TIMES=5                 # Max Python tool invocation times
-    MAX_SEARCH_TIMES=10                # Max search tool invocation times
-else
-    PROMPT_TYPE="base"                 # Prompt type (code_search, search, math, base)
-    MAX_PYTHON_TIMES=0                 # Max Python tool invocation times
-    MAX_SEARCH_TIMES=0                 # Max search tool invocation times
-fi
 
-
-# Tool selection
 use_sdg_tools=true
-
-# Inference Mode
-if [ "$use_sdg_tools" = true ]; then
-    INFER_MODE="completion_sdg"
-else
-    INFER_MODE=completion_sds   # `completion_sds` (with web browser), 'default' (without web browser)
-fi
-
+PROMPT_TYPE="sdg_agent"            # Prompt type for SDG tools
+MAX_PYTHON_TIMES=5                 # Max Python tool invocation times
+MAX_SEARCH_TIMES=0                 # No search tools for SDG
+WORKING_DIR="/home/vpcuser/rawhad/sdg_hub"  # Set your project directory  # SDG_HUB commit: 2d09b7cfd7403cedda4bc2f2ab54c3960204b5f1 in chore/deps-examples-update
+CACHE_DIR="sdg_cache"
+INFER_MODE="completion_sdg"
 
 
 # VLLM config
