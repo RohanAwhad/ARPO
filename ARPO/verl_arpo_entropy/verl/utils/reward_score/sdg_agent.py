@@ -272,6 +272,143 @@ def compute_score(
     return result
 
 
+def compute_score_batch(
+    data_sources: list[str],
+    solution_strs: list[str],
+    ground_truths: list[dict],
+    extra_infos: list[dict] = None,
+    judge_endpoint: str = "http://localhost:8001/v1/chat/completions",
+    judge_model: str = "Qwen2.5-72B-Instruct",
+    judge_temperature: float = 0.1,
+    judge_max_tokens: int = 2048,
+    judge_timeout: int = 60,
+    tool_bonus_multi: float = 0.1,
+    tool_bonus_single: float = 0.05,
+    min_tools_for_bonus: int = 2,
+    max_concurrency: int = 8,
+    **unused_kwargs,
+) -> list[dict]:
+    """
+    Vectorized batch judge: send N HTTP requests in parallel (bounded by a semaphore)
+    and return list of score-dicts matching the input order.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
+    
+    if extra_infos is None:
+        extra_infos = [None] * len(solution_strs)
+
+    semaphore = threading.Semaphore(max_concurrency)
+
+    def process_single_item(args):
+        data_source, solution_str, ground_truth, extra_info = args
+        
+        semaphore.acquire()
+        try:
+            # Initialize return structure
+            result = {
+                "score": 0,
+                "reason": "",
+                "answer": "",
+                "judge_score": 0.0,
+                "judge_reasoning": "",
+                "tool_usage": {},
+                "tool_bonus": 0.0
+            }
+
+            response = solution_str
+
+            # Validate format
+            valid_template, reason = validate_format_sdg(response)
+
+            if not valid_template:
+                result["score"] = -2
+                result["reason"] = f"bad format: {reason}"
+                return result
+
+            # Remove EOS token if present
+            if extra_info is not None and "tokenizer" in extra_info and extra_info["tokenizer"].eos_token and response.endswith(extra_info["tokenizer"].eos_token):
+                response = response[:-len(extra_info["tokenizer"].eos_token)]
+
+            # Extract answer
+            answer_part = extract_answer(response)
+            if answer_part is None:
+                result["score"] = -1
+                result["reason"] = "cannot extract answer"
+                return result
+
+            result["answer"] = answer_part
+
+            ground_truth_answer = ground_truth['answer']
+            rubric = ground_truth.get('rubric', 'No rubric found')
+
+            # Count tool usage
+            tool_usage = count_tool_usage(response)
+            result["tool_usage"] = tool_usage
+
+            # Calculate tool usage bonus
+            unique_tools_used = len([tool for tool, count in tool_usage.items() if count > 0])
+
+            if unique_tools_used >= min_tools_for_bonus:
+                result["tool_bonus"] = tool_bonus_multi
+            elif unique_tools_used == 1:
+                result["tool_bonus"] = tool_bonus_single
+
+            # Call LLM judge
+            judge_result = call_llm_judge(
+                candidate_answer=answer_part,
+                ground_truth_answer=ground_truth_answer,
+                rubric=rubric,
+                judge_endpoint=judge_endpoint,
+                judge_model=judge_model,
+                judge_temperature=judge_temperature,
+                judge_max_tokens=judge_max_tokens,
+                judge_timeout=judge_timeout
+            )
+
+            judge_score = judge_result["score"]
+            result["judge_score"] = judge_score
+            result["judge_reasoning"] = judge_result["reasoning"]
+
+            # Calculate final score
+            base_score = judge_score
+            final_score = base_score + result["tool_bonus"]
+
+            # Cap the final score at 1.0
+            final_score = min(1.0, final_score)
+
+            result["score"] = final_score
+
+            # Create detailed reason
+            if judge_score > 0.7:
+                quality_desc = "high quality"
+            elif judge_score > 0.4:
+                quality_desc = "moderate quality"
+            else:
+                quality_desc = "low quality"
+
+            tool_desc = f"Used {unique_tools_used} different tools ({', '.join([tool for tool, count in tool_usage.items() if count > 0])})"
+
+            result["reason"] = f"{quality_desc} answer (judge score: {judge_score:.3f}) + tool bonus: {result['tool_bonus']:.3f}. {tool_desc}. Final score: {final_score:.3f}"
+
+            return result
+            
+        finally:
+            semaphore.release()
+
+    print(f"Starting batch evaluation with {len(solution_strs)} items, max_concurrency={max_concurrency}")
+    
+    # Spin up a small threadpool
+    with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
+        # Preserve ordering
+        batch_args = list(zip(data_sources, solution_strs, ground_truths, extra_infos))
+        results = list(executor.map(process_single_item, batch_args))
+    
+    print(f"Batch evaluation completed. Sample scores: {[r['score'] for r in results[:3]]}")
+    
+    return results
+
+
 if __name__ == "__main__":
     # Test the reward function
     tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct")
@@ -322,3 +459,14 @@ The SDG repository contains a comprehensive implementation of the 17 Sustainable
 
     result = compute_score("sdg_test", response, ground_truth, extra_info)
     print("Test Result:", result)
+    
+    # Test batch function
+    print("\nTesting batch function:")
+    batch_result = compute_score_batch(
+        data_sources=["sdg_test"],
+        solution_strs=[response], 
+        ground_truths=[ground_truth],
+        extra_infos=[extra_info]
+    )
+    print("Batch Test Result:", batch_result[0])
+

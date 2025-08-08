@@ -70,9 +70,9 @@ READ_FILE_CLASS_PATH="verl.workers.rollout.tools.sdg_search_tool.BashReadTool"
 
 # ============================ Reward Model Configuration ==========================
 # Reward model settings
-REWARD_MANAGER="naive"              # Reward manager type
+REWARD_MANAGER="batch"
+CUSTOM_REWARD_FUNCTION_NAME="compute_score_batch"
 CUSTOM_REWARD_FUNCTION_PATH="${ARPO_PATH}/verl_arpo_entropy/verl/utils/reward_score/sdg_agent.py"
-CUSTOM_REWARD_FUNCTION_NAME="compute_score"
 
 # ============================ Training Configuration ============================
 # Training parameters
