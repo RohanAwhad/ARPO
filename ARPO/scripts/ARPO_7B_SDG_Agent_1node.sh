@@ -12,7 +12,7 @@ export VLLM_ATTENTION_BACKEND=XFORMERS
 export VERL_LOGGING_LEVEL=DEBUG
 export MKL_SERVICE_FORCE_INTEL=1
 export MKL_THREADING_LAYER=GNU
-export RAY_memory_usage_threshold=0.9
+export RAY_memory_usage_threshold=0.8
 export RAY_memory_monitor_refresh_ms=0
 
 
@@ -130,7 +130,7 @@ CUDA_VISBILE_DEVICES=0,1,2,3,4,5 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
     actor_rollout_ref.rollout.name=${ROLLOUT_NAME} \
     actor_rollout_ref.rollout.mode=${ROLLOUT_MODE} \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.85 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.7 \
     actor_rollout_ref.rollout.n=${ROLLOUT_N} \
     actor_rollout_ref.rollout.initial_rollouts=${INITIAL_ROLLOUTS} \
     actor_rollout_ref.rollout.beam_size=${BEAM_SIZE} \
