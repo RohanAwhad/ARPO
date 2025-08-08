@@ -31,7 +31,7 @@ CONFIG_NAME="ppo_trainer_sdg.yaml"  # TODO
 
 # Distributed training settings
 NNODES=1
-N_GPUS_PER_NODE=8
+N_GPUS_PER_NODE=6
 
 # ============================ Data Configuration ============================
 # Data parameters
@@ -56,8 +56,8 @@ ACTOR_MODEL_PATH="Qwen/Qwen2.5-1.5B-Instruct" # Modify training model path
 # Rollout settings
 ROLLOUT_NAME="vllm"                 # Use vllm engine
 ROLLOUT_MODE="sync_with_tool"       # Synchronous mode with tool support
-ROLLOUT_N=16                         # Number of responses generated per sample
-INITIAL_ROLLOUTS=8                 # Initial rollout number
+ROLLOUT_N=2*$N_GPUS_PER_NODE                         # Number of responses generated per sample
+INITIAL_ROLLOUTS=$N_GPUS_PER_NODE                 # Initial rollout number
 BEAM_SIZE=2                        # Beam size
 BRANCH_PROBABILITY=0.5             # Branch probability
 Entropy_weight=0.2
@@ -140,7 +140,6 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.tools.tool_instances.find.params.working_dir=${SDG_PATH} \
     actor_rollout_ref.rollout.tools.tool_instances.grep.params.working_dir=${SDG_PATH} \
     actor_rollout_ref.rollout.tools.tool_instances.read.params.working_dir=${SDG_PATH} \
-
     actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=$((4*(MAX_PROMPT_LENGTH+MAX_RESPONSE_LENGTH))) \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     reward_model.reward_manager=${REWARD_MANAGER} \

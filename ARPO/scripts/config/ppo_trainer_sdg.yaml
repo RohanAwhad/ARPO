@@ -277,7 +277,7 @@ custom_reward_function:
     judge_endpoint: "http://localhost:8001/v1/chat/completions"
     judge_model: "Qwen2.5-72B-Instruct"
     judge_temperature: 0.1
-    judge_max_tokens: 2048
+    judge_max_tokens: 32768
     judge_timeout: 60
     tool_bonus_multi: 0.1    # Bonus for using multiple tools
     tool_bonus_single: 0.05  # Bonus for using single tool
