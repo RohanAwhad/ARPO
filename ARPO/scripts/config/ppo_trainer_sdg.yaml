@@ -165,9 +165,6 @@ actor_rollout_ref:
             working_dir: /home/vpcuser/rawhad/sdg_hub
             default_limit: 20
             default_offset: 0
-            cache_file: null
-            async_cache_write: true
-            cache_refresh_interval: 60.0
             request_timeout: 30
 
         grep:
@@ -176,9 +173,6 @@ actor_rollout_ref:
             working_dir: /home/vpcuser/rawhad/sdg_hub
             default_limit: 20
             default_offset: 0
-            cache_file: null
-            async_cache_write: true
-            cache_refresh_interval: 30.0
             request_timeout: 30
 
         read:
@@ -187,8 +181,7 @@ actor_rollout_ref:
             working_dir: /home/vpcuser/rawhad/sdg_hub
             default_limit: 0
             default_offset: 0
-            cache_file: null
-            async_cache_write: true
+
 
 
 critic:
