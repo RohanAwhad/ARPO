@@ -12,7 +12,7 @@ export VLLM_ATTENTION_BACKEND=XFORMERS
 export VERL_LOGGING_LEVEL=DEBUG
 export MKL_SERVICE_FORCE_INTEL=1
 export MKL_THREADING_LAYER=GNU
-export RAY_memory_usage_threshold=0.8
+export RAY_memory_usage_threshold=0.9
 export RAY_memory_monitor_refresh_ms=0
 
 
@@ -36,7 +36,7 @@ N_GPUS_PER_NODE=6
 # ============================ Data Configuration ============================
 # Data parameters
 PROMPT_KEY="prompt"                 # Prompt field name
-TRAIN_BATCH_SIZE=128                # Training batch size
+TRAIN_BATCH_SIZE=96                # Training batch size
 PPO_MINI_BATCH_SIZE=16              # PPO mini-batch size
 MAX_PROMPT_LENGTH=1536              # Maximum prompt length
 MAX_RESPONSE_LENGTH=4096            # Maximum response length
@@ -49,15 +49,15 @@ VALID_FILES="${ARPO_PATH}/rl_datasets/sdg_valid.parquet" # Modify validation dat
 # ============================ Model Configuration ============================
 # Actor model path
 # TODO: move to 7B post testing
-ACTOR_MODEL_PATH="Qwen/Qwen2.5-1.5B-Instruct" # Modify training model path
-# ACTOR_MODEL_PATH="Qwen/Qwen2.5-7B-Instruct" # Modify training model path
+#ACTOR_MODEL_PATH="Qwen/Qwen2.5-1.5B-Instruct" # Modify training model path
+ACTOR_MODEL_PATH="Qwen/Qwen2.5-7B-Instruct" # Modify training model path
 
 # ============================ Rollout Configuration ==========================
 # Rollout settings
 ROLLOUT_NAME="vllm"                 # Use vllm engine
 ROLLOUT_MODE="sync_with_tool"       # Synchronous mode with tool support
-ROLLOUT_N=2*$N_GPUS_PER_NODE                         # Number of responses generated per sample
-INITIAL_ROLLOUTS=$N_GPUS_PER_NODE                 # Initial rollout number
+ROLLOUT_N=12                         # Number of responses generated per sample
+INITIAL_ROLLOUTS=6                 # Initial rollout number
 BEAM_SIZE=2                        # Beam size
 BRANCH_PROBABILITY=0.5             # Branch probability
 Entropy_weight=0.2
@@ -103,7 +103,7 @@ if [ ! -d "$ROLLOUT_SAVE_PATH" ]; then
 fi
 
 # ============================ Start Training ============================
-python3 -m verl.trainer.main_ppo \
+CUDA_VISBILE_DEVICES=0,1,2,3,4,5 python3 -m verl.trainer.main_ppo \
     --config-path=$CONFIG_PATH \
     --config-name=$CONFIG_NAME \
     algorithm.adv_estimator=grpo \
@@ -130,7 +130,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
     actor_rollout_ref.rollout.name=${ROLLOUT_NAME} \
     actor_rollout_ref.rollout.mode=${ROLLOUT_MODE} \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.7 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.85 \
     actor_rollout_ref.rollout.n=${ROLLOUT_N} \
     actor_rollout_ref.rollout.initial_rollouts=${INITIAL_ROLLOUTS} \
     actor_rollout_ref.rollout.beam_size=${BEAM_SIZE} \

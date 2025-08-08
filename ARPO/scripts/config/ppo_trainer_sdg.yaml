@@ -150,7 +150,7 @@ actor_rollout_ref:
       format: chatml  # chatml, more formats will be supported in the future
     tools:
       # rollout通用工具配置
-      call_limit: 3  # 每个样本允许的最大工具调用次数
+      call_limit: 30  # 每个样本允许的最大工具调用次数
       max_workers: 64  # 并发工具执行的最大线程数
       timeout: 120  # 工具执行超时时间（秒）
       retry_count: 3  # 工具执行失败重试次数
@@ -276,8 +276,8 @@ custom_reward_function:
   reward_kwargs:
     judge_endpoint: "http://localhost:8001/v1/chat/completions"
     judge_model: "Qwen2.5-72B-Instruct"
-    judge_temperature: 0.1
-    judge_max_tokens: 32768
+    judge_temperature: 0.6
+    judge_max_tokens: 4096
     judge_timeout: 60
     tool_bonus_multi: 0.1    # Bonus for using multiple tools
     tool_bonus_single: 0.05  # Bonus for using single tool
