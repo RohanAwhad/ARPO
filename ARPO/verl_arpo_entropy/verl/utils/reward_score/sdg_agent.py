@@ -391,7 +391,11 @@ def compute_score_batch(
 
             result["reason"] = f"{quality_desc} answer (judge score: {judge_score:.3f}) + tool bonus: {result['tool_bonus']:.3f}. {tool_desc}. Final score: {final_score:.3f}"
 
+            # Log individual sample completion
+            print(f"Sample completed - Judge: {judge_score:.3f}, Tools: {unique_tools_used}, Bonus: {result['tool_bonus']:.3f}, Final: {final_score:.3f}")
+
             return result
+
             
         finally:
             semaphore.release()
