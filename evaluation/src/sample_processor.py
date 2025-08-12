@@ -32,14 +32,17 @@ class SampleProcessor:
         self.llm_time = 0
         self.python_time = 0
         self.search_time = 0
+        self.sdg_time = 0
         self.total_time = None
         self.python_rounds = 0
         self.search_rounds = 0
+        self.sdg_rounds = 0
         self.in_context = ""
         self.messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
         ]
+
 
     def log_output(self, role: str, content: str):
         self.sample_stat["output"] += content
@@ -77,12 +80,21 @@ class SampleProcessor:
                 output = output.split("</search>")[0] + "</search>"
             if "</python>" in output:
                 output = output.split("</python>")[0] + "</python>"
+            if "</find>" in output:
+                output = output.split("</find>")[0] + "</find>"
+            if "</grep>" in output:
+                output = output.split("</grep>")[0] + "</grep>"
+            if "</read>" in output:
+                output = output.split("</read>")[0] + "</read>"
             if "</answer>" in output:
                 output = output.split("</answer>")[0] + "</answer>"
             all_output += output
             if (
                 "</search>" not in all_output
                 and "</python>" not in all_output
+                and "</find>" not in all_output
+                and "</grep>" not in all_output
+                and "</read>" not in all_output
                 and "</answer>" not in all_output
             ):
                 print("Continue generating...")
@@ -90,6 +102,7 @@ class SampleProcessor:
             else:
                 break
         return all_output
+
 
     async def call_llm(self, stop=True):
         print(f">" * 50)
@@ -160,13 +173,16 @@ class SampleProcessor:
         print(f"  LLM inference: {self.llm_time:.2f}s")
         print(f"  Python call: {self.python_time:.2f}s ({self.python_rounds} times)")
         print(f"  Search call: {self.search_time:.2f}s ({self.search_rounds} times)")
+        print(f"  SDG call: {self.sdg_time:.2f}s ({self.sdg_rounds} times)")
         print(f"  Total: {self.total_time:.2f}s")
         self.sample_stat["timing"] = {
             "llm_time": self.llm_time,
             "python_time": self.python_time,
             "search_time": self.search_time,
+            "sdg_time": self.sdg_time,
             "total_time": self.total_time,
         }
+
 
 
 class SampleProcessorCompletion(SampleProcessor):
@@ -192,11 +208,11 @@ class SampleProcessorCompletion(SampleProcessor):
     async def call_sdg_tool(self, tool_tag: str, tool_content: str):
         tool_start = time.time()
         tool_result = await self.tool_executor.execute(tool_tag, tool_content, timeout=120)
-        # Add SDG tool time to search time for now (could add separate tracking)
-        self.search_time += time.time() - tool_start
+        self.sdg_time += time.time() - tool_start
         tool_result_formatted = f"<result>{tool_result}</result>"
         self.log_output("user", tool_result_formatted)
-        self.search_rounds += 1
+        self.sdg_rounds += 1
+
 
     async def run(self):
         self.sample_start_time = time.time()

@@ -118,15 +118,22 @@ class Evaluator:
         # Tool usage statistics
         python_calls = count_valid_tags(output, "python")
         search_calls = count_valid_tags(output, "search")
+        find_calls = count_valid_tags(output, "find")
+        grep_calls = count_valid_tags(output, "grep")
+        read_calls = count_valid_tags(output, "read")
+        sdg_calls = find_calls + grep_calls + read_calls
 
         metrics.update({
             "python_calls": python_calls,
             "search_calls": search_calls,
-            "tools_used": ("both" if python_calls and search_calls else
-                           "python" if python_calls else
-                           "search" if search_calls else "none"),
-            "tool_counts": python_calls + search_calls
+            "find_calls": find_calls,
+            "grep_calls": grep_calls,
+            "read_calls": read_calls,
+            "sdg_calls": sdg_calls,
+            "tools_used": self._determine_tools_used(python_calls, search_calls, sdg_calls),
+            "tool_counts": python_calls + search_calls + sdg_calls
         })
+
 
         # Output length
         metrics["output_length"] = len(remove_result_tags(output))
@@ -197,6 +204,23 @@ class Evaluator:
         self.save_results(updated_data)
         return self.overall_metrics
 
+    def _determine_tools_used(self, python_calls: int, search_calls: int, sdg_calls: int) -> str:
+        """Determine which tools were used based on call counts."""
+        tools = []
+        if python_calls > 0:
+            tools.append("python")
+        if search_calls > 0:
+            tools.append("search")
+        if sdg_calls > 0:
+            tools.append("sdg")
+        
+        if len(tools) == 0:
+            return "none"
+        elif len(tools) == 1:
+            return tools[0]
+        else:
+            return "multiple"
+
     def calculate_overall_metrics(self, data: List[Dict[str, Any]]) -> Dict[str, Union[float, str]]:
         """
         Calculate overall evaluation metrics.
@@ -216,6 +240,10 @@ class Evaluator:
         avg_tool_counts = [item['metrics'].get('tool_counts', 0) for item in data]
         avg_python_calls = [item['metrics'].get('python_calls', 0) for item in data]
         avg_search_calls = [item['metrics'].get('search_calls', 0) for item in data]
+        avg_find_calls = [item['metrics'].get('find_calls', 0) for item in data]
+        avg_grep_calls = [item['metrics'].get('grep_calls', 0) for item in data]
+        avg_read_calls = [item['metrics'].get('read_calls', 0) for item in data]
+        avg_sdg_calls = [item['metrics'].get('sdg_calls', 0) for item in data]
         
         tool_usage_rate = sum(1 for count in avg_tool_counts if count > 0) / len(data) if data else 0
         avg_tool_count = np.mean(avg_tool_counts) if avg_tool_counts else 0
@@ -245,10 +273,15 @@ class Evaluator:
             'tool_call': avg_tool_count,
             'average_python_calls': np.mean(avg_python_calls) if avg_python_calls else 0.0,
             'average_search_calls': np.mean(avg_search_calls) if avg_search_calls else 0.0,
+            'average_find_calls': np.mean(avg_find_calls) if avg_find_calls else 0.0,
+            'average_grep_calls': np.mean(avg_grep_calls) if avg_grep_calls else 0.0,
+            'average_read_calls': np.mean(avg_read_calls) if avg_read_calls else 0.0,
+            'average_sdg_calls': np.mean(avg_sdg_calls) if avg_sdg_calls else 0.0,
             'llm_equal': np.mean(avg_llm) if avg_llm else 0.0,
             'm1m2': final_tool_productivity,
         }
         return overall_metrics
+
 
     def save_results(self, data: List[Dict[str, Any]]):
         """
@@ -280,8 +313,13 @@ class Evaluator:
         print(f"Avg tool calls: {self.overall_metrics.get('tool_call', 0):.2f}")
         print(f"Python calls: {self.overall_metrics.get('average_python_calls', 0):.2f}")
         print(f"Search calls: {self.overall_metrics.get('average_search_calls', 0):.2f}")
+        print(f"Find calls: {self.overall_metrics.get('average_find_calls', 0):.2f}")
+        print(f"Grep calls: {self.overall_metrics.get('average_grep_calls', 0):.2f}")
+        print(f"Read calls: {self.overall_metrics.get('average_read_calls', 0):.2f}")
+        print(f"SDG calls: {self.overall_metrics.get('average_sdg_calls', 0):.2f}")
         print(f"Tool usage rate: {self.overall_metrics.get('average_datas_used_tool_number', 0):.2f}")
         print(f"Tool productivity (M1*M2): {self.overall_metrics.get('tool_productivity', 0):.2f}")
+
 
 
 def count_valid_tags(text: str, tag: str) -> int:
