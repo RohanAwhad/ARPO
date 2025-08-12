@@ -265,14 +265,6 @@ class BashGrepTool(BaseTool):
     except Exception as e:
       return json.dumps({"error": f"Invalid query format: {str(e)}"})
     
-    # Cache key
-    cache_key = json.dumps({"pattern": pattern, "search_path": search_path, "include_pattern": include_pattern}, sort_keys=True)
-    
-    # Check cache
-    with self._cache_lock:
-      if cache_key in self._cache and self._is_cache_valid(cache_key):
-        return self._cache[cache_key]
-    
     try:
       # Validate path
       validated_path = search_path
@@ -302,19 +294,13 @@ class BashGrepTool(BaseTool):
         lines = result.stdout.strip().split("\n") if result.stdout.strip() else []
         response = self._paginate_results(lines, self._default_limit, self._default_offset)
       
-      # Cache result
-      response_str = json.dumps(response, ensure_ascii=False, indent=2)
-      with self._cache_lock:
-        self._cache[cache_key] = response_str
-        self._cache_timestamps[cache_key] = time.time()
-      
-      self._save_cache()
-      return response_str
+      return json.dumps(response, ensure_ascii=False, indent=2)
       
     except TimeoutExpired:
       return json.dumps({"error": "Command timed out"})
     except Exception as e:
       return json.dumps({"error": f"Grep search failed: {str(e)}"})
+
 
 
 
