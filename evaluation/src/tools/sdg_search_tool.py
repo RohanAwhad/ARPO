@@ -12,7 +12,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
 from .base_tool import BaseTool
-from .cache_manager import PreprocessCacheManager
+
 
 
 class BashFindTool(BaseTool):
@@ -25,14 +25,11 @@ class BashFindTool(BaseTool):
         working_dir: Optional[str] = None,
         default_limit: int = 20,
         default_offset: int = 0,
-        cache_file: Optional[str] = None,
-        cache_refresh_interval: float = 60.0,
         request_timeout: int = 30
     ):
         self._default_limit = default_limit
         self._default_offset = default_offset
         self._request_timeout = request_timeout
-        self._cache_refresh_interval = cache_refresh_interval
 
         # Set working directory
         if working_dir:
@@ -42,9 +39,6 @@ class BashFindTool(BaseTool):
         else:
             self._cwd = Path.cwd().resolve()
 
-        # Initialize cache manager
-        cache_file = cache_file or os.path.join(Path.home(), ".verl_cache", "bash_find_cache.db")
-        self.cache_manager = PreprocessCacheManager(cache_file)
 
     @property
     def name(self) -> str:
@@ -154,27 +148,13 @@ class BashFindTool(BaseTool):
         return json.dumps(response, ensure_ascii=False, indent=2)
 
     async def execute(self, query: str, timeout: int = 60, **kwargs) -> str:
-        """Execute a bash find query with cache support."""
-        # Check cache
-        cache_key = json.dumps({
-            "query": query,
-            "tool": "find"
-        }, sort_keys=True)
-
-        hit_cache = self.cache_manager.hit_cache(cache_key)
-        if hit_cache:
-            print(f"Hit cache: {query}")
-            response = hit_cache
-        else:
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                self._executor, lambda: self._make_request(query, timeout)
-            )
-
-            if "error" not in response:
-                await self.cache_manager.add_to_cache(cache_key, response)
-
+        """Execute a bash find query."""
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            self._executor, lambda: self._make_request(query, timeout)
+        )
         return await self.postprocess_search_result(query, response, **kwargs)
+
 
 
 class BashGrepTool(BaseTool):
@@ -187,14 +167,11 @@ class BashGrepTool(BaseTool):
         working_dir: Optional[str] = None,
         default_limit: int = 20,
         default_offset: int = 0,
-        cache_file: Optional[str] = None,
-        cache_refresh_interval: float = 30.0,
         request_timeout: int = 30
     ):
         self._default_limit = default_limit
         self._default_offset = default_offset
         self._request_timeout = request_timeout
-        self._cache_refresh_interval = cache_refresh_interval
 
         # Set working directory
         if working_dir:
@@ -204,9 +181,6 @@ class BashGrepTool(BaseTool):
         else:
             self._cwd = Path.cwd().resolve()
 
-        # Initialize cache manager
-        cache_file = cache_file or os.path.join(Path.home(), ".verl_cache", "bash_grep_cache.db")
-        self.cache_manager = PreprocessCacheManager(cache_file)
 
     @property
     def name(self) -> str:
@@ -311,27 +285,13 @@ class BashGrepTool(BaseTool):
         return json.dumps(response, ensure_ascii=False, indent=2)
 
     async def execute(self, query: str, timeout: int = 60, **kwargs) -> str:
-        """Execute a bash grep query with cache support."""
-        # Check cache
-        cache_key = json.dumps({
-            "query": query,
-            "tool": "grep"
-        }, sort_keys=True)
-
-        hit_cache = self.cache_manager.hit_cache(cache_key)
-        if hit_cache:
-            print(f"Hit cache: {query}")
-            response = hit_cache
-        else:
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                self._executor, lambda: self._make_request(query, timeout)
-            )
-
-            if "error" not in response:
-                await self.cache_manager.add_to_cache(cache_key, response)
-
+        """Execute a bash grep query."""
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            self._executor, lambda: self._make_request(query, timeout)
+        )
         return await self.postprocess_search_result(query, response, **kwargs)
+
 
 
 class BashReadTool(BaseTool):
@@ -343,8 +303,7 @@ class BashReadTool(BaseTool):
         self,
         working_dir: Optional[str] = None,
         default_limit: int = 0,
-        default_offset: int = 0,
-        cache_file: Optional[str] = None
+        default_offset: int = 0
     ):
         self._default_limit = default_limit
         self._default_offset = default_offset
@@ -357,9 +316,6 @@ class BashReadTool(BaseTool):
         else:
             self._cwd = Path.cwd().resolve()
 
-        # Initialize cache manager with modification time tracking
-        cache_file = cache_file or os.path.join(Path.home(), ".verl_cache", "bash_read_cache.db")
-        self.cache_manager = PreprocessCacheManager(cache_file)
 
     @property
     def name(self) -> str:
@@ -403,14 +359,7 @@ class BashReadTool(BaseTool):
             "returned": len(paginated)
         }
 
-    def _is_cache_valid(self, filepath: str, cached_data: Dict) -> bool:
-        """Check if cached content is still valid based on file modification time."""
-        try:
-            current_mod_time = os.path.getmtime(filepath)
-            cached_mod_time = cached_data.get("mod_time", 0)
-            return current_mod_time <= cached_mod_time
-        except OSError:
-            return False
+
 
     def _make_request(self, query: str, timeout: int) -> Dict:
         """Read file content."""
@@ -463,32 +412,10 @@ class BashReadTool(BaseTool):
         return json.dumps(result, ensure_ascii=False, indent=2)
 
     async def execute(self, query: str, timeout: int = 60, **kwargs) -> str:
-        """Execute a bash read query with cache support."""
-        # Extract filepath for cache validation
-        try:
-            tags = self._parse_xml_tags(query.strip())
-            filepath = tags.get("filepath", query.strip() if not tags else "")
-            full_path = str(self._cwd / filepath)
-        except:
-            full_path = ""
-
-        # Check cache
-        cache_key = json.dumps({
-            "query": query,
-            "tool": "read"
-        }, sort_keys=True)
-
-        hit_cache = self.cache_manager.hit_cache(cache_key)
-        if hit_cache and full_path and self._is_cache_valid(full_path, hit_cache):
-            print(f"Hit cache: {query}")
-            response = hit_cache
-        else:
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                self._executor, lambda: self._make_request(query, timeout)
-            )
-
-            if "error" not in response:
-                await self.cache_manager.add_to_cache(cache_key, response)
-
+        """Execute a bash read query."""
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            self._executor, lambda: self._make_request(query, timeout)
+        )
         return await self.postprocess_search_result(query, response, **kwargs)
+

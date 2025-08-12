@@ -291,20 +291,11 @@ class AsyncInferenceSDG(AsyncInferenceCompletion):
         from .tools.sdg_search_tool import BashFindTool, BashGrepTool, BashReadTool
 
         working_dir = getattr(self.args, 'working_dir', None)
-        cache_dir = getattr(self.args, 'cache_dir', None)
 
-        find_tool = BashFindTool(
-            working_dir=working_dir,
-            cache_file=f"{cache_dir}/bash_find_cache.db" if cache_dir else None
-        )
-        grep_tool = BashGrepTool(
-            working_dir=working_dir,
-            cache_file=f"{cache_dir}/bash_grep_cache.db" if cache_dir else None
-        )
-        read_tool = BashReadTool(
-            working_dir=working_dir,
-            cache_file=f"{cache_dir}/bash_read_cache.db" if cache_dir else None
-        )
+        find_tool = BashFindTool(working_dir=working_dir)
+        grep_tool = BashGrepTool(working_dir=working_dir)
+        read_tool = BashReadTool(working_dir=working_dir)
+
 
         tool_executor.register_tool(find_tool)
         tool_executor.register_tool(grep_tool)
